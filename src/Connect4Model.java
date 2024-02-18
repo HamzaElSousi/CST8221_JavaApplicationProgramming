@@ -1,6 +1,7 @@
 /*
  * Student name && ID : Hamza El Sousi , 040982818
  * Student name && ID : Mansi Joshi , 041091664
+ * Assignment:
  * Lab Prof: Paulo Sousa
  * Assignment: A12
  * Lab Prof: Paulo Sousa
@@ -11,11 +12,18 @@ public class Connect4Model {
     private static final int COLUMNS = 7;
     private char[][] board;
     private char currentPlayer;
+    private int redChipsPlayed;
+    private int yellowChipsPlayed;
+    //public static final int EMPTY = -1;
+    public static final int RED_PLAYER = 0; // Add this constant
+    public static final int YELLOW_PLAYER = 1;
 
     public Connect4Model() {
         board = new char[getRows()][getColumns()];
         currentPlayer = 'R'; // Starting player, R for Red, Y for Yellow
         initializeBoard();
+        redChipsPlayed = 0;
+        yellowChipsPlayed = 0;
     }
 
     void initializeBoard() {
@@ -26,6 +34,8 @@ public class Connect4Model {
         }
     }
 
+ // In Connect4Model.java
+
     public boolean makeMove(int column) {
         if (column < 0 || column >= getColumns()) {
             return false; // Invalid column
@@ -34,12 +44,18 @@ public class Connect4Model {
         for (int i = getRows() - 1; i >= 0; i--) {
             if (board[i][column] == '.') {
                 board[i][column] = currentPlayer;
+                if (currentPlayer == 'R') {
+                    redChipsPlayed++;
+                } else {
+                    yellowChipsPlayed++;
+                }
                 return true;
             }
         }
 
         return false; // Column is full
     }
+
 
     public boolean isDraw() {
         for (int i = 0; i < getRows(); i++) {
@@ -136,17 +152,19 @@ public class Connect4Model {
         return currentPlayer;
     }
 
-	/**
-	 * @return the columns
-	 */
-	public static int getColumns() {
-		return COLUMNS;
-	}
+    public int getRedChipsPlayed() {
+        return redChipsPlayed;
+    }
 
-	/**
-	 * @return the rows
-	 */
-	public static int getRows() {
-		return ROWS;
-	}
+    public int getYellowChipsPlayed() {
+        return yellowChipsPlayed;
+    }
+
+    public static int getColumns() {
+        return COLUMNS;
+    }
+
+    public static int getRows() {
+        return ROWS;
+    }
 }
