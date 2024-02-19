@@ -1,7 +1,6 @@
 /*
  * Student name && ID : Hamza El Sousi , 040982818
  * Student name && ID : Mansi Joshi , 041091664
- * Assignment:
  * Lab Prof: Paulo Sousa
  * Assignment: A12
  * Lab Prof: Paulo Sousa
@@ -29,7 +28,8 @@ public class Main {
         SwingUtilities.invokeLater(() -> {
             Connect4Model model = new Connect4Model();
             Connect4View view = new Connect4View();
-            Connect4Controller controller = new Connect4Controller(model, view);
+            @SuppressWarnings("unused") //used
+			Connect4Controller controller = new Connect4Controller(model, view);
         });
     }
 }

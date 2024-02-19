@@ -1,7 +1,6 @@
 /*
  * Student name && ID : Hamza El Sousi , 040982818
  * Student name && ID : Mansi Joshi , 041091664
- * Assignment:
  * Lab Prof: Paulo Sousa
  * Assignment: A12
  * Lab Prof: Paulo Sousa
@@ -89,12 +88,12 @@ public class Connect4View {
         JPanel boardPanel = new JPanel();
         boardPanel.setLayout(new GridLayout(Connect4Model.getRows(), Connect4Model.getColumns()));
         buttons = new JButton[Connect4Model.getRows()][Connect4Model.getColumns()];
-
+        
         for (int i = 0; i < Connect4Model.getRows(); i++) {
             for (int j = 0; j < Connect4Model.getColumns(); j++) {
                 JButton button = new JButton();
                 button.setOpaque(true);
-                button.setBackground(Color.WHITE);
+                button.setBackground(Color.CYAN);
                 buttons[i][j] = button;
                 boardPanel.add(button);
             }
@@ -151,18 +150,45 @@ public class Connect4View {
     }
 
     // Setters for action listeners
+    
+    /**
+     * Sets an action listener for a specific button on the game board. This allows
+     * the controller to handle player moves when buttons are clicked.
+     * 
+     * @param row the row index of the button
+     * @param column the column index of the button
+     * @param listener the action listener to be attached to the button
+     */
     public void setActionListenerForButton(int row, int column, ActionListener listener) {
         buttons[row][column].addActionListener(listener);
     }
 
+    /**
+     * Sets an action listener for the chat input field. This allows the controller to handle
+     * sending chat messages when the enter key is pressed.
+     * 
+     * @param listener the action listener to be attached to the chat input field
+     */
     public void setActionListenerForChatInput(ActionListener listener) {
         chatInput.addActionListener(listener);
     }
 
+    /**
+     * Sets an action listener for the restart menu item. This allows the controller to handle
+     * game restart requests from the user.
+     * 
+     * @param listener the action listener to be attached to the restart menu item
+     */
     public void setActionListenerForRestartItem(ActionListener listener) {
         restartItem.addActionListener(listener);
     }
-
+    
+    /**
+     * Sets an action listener for the exit menu item. This allows the controller to handle
+     * game exit requests from the user.
+     * 
+     * @param listener the action listener to be attached to the exit menu item
+     */
     public void setActionListenerForExitItem(ActionListener listener) {
         exitItem.addActionListener(listener);
     }
@@ -182,7 +208,9 @@ public class Connect4View {
         button.setEnabled(false);
     }
 
-    
+    /**
+     * Resets the game board to its initial state, clearing all player moves and enabling all buttons.
+     */
     public void resetBoard() {
         for (int i = 0; i < Connect4Model.getRows(); i++) {
             for (int j = 0; j < Connect4Model.getColumns(); j++) {
@@ -193,6 +221,15 @@ public class Connect4View {
         }
     }
 
+    /**
+     * Updates the status panel with the current game status, including the active player's turn,
+     * the number of chips played by each player, and the elapsed game time.
+     * 
+     * @param text the current status text to display (e.g., "Player R's turn")
+     * @param redChipsPlayed the number of chips played by the red player
+     * @param yellowChipsPlayed the number of chips played by the yellow player
+     * @param timeTaken the elapsed time since the game started, in milliseconds
+     */
     public void updateStatus(String text, int redChipsPlayed, int yellowChipsPlayed, long timeTaken) {
         statusLabel.setText(text);
         redChipsLabel.setText("Red Chips Played: " + redChipsPlayed);
@@ -200,6 +237,9 @@ public class Connect4View {
         timeLabel.setText("Time Taken: " + timeTaken + " ms");
     }
 
+    /**
+     * Disables all buttons on the game board, typically used when the game has ended to prevent further moves.
+     */
     public void disableAllButtons() {
         for (int i = 0; i < Connect4Model.getRows(); i++) {
             for (int j = 0; j < Connect4Model.getColumns(); j++) {
@@ -208,22 +248,45 @@ public class Connect4View {
         }
     }
 
+    /**
+     * Appends a message to the chat area, allowing players to communicate during the game.
+     * 
+     * @param message the message to append to the chat area
+     */
     public void appendChat(String message) {
         chatArea.append(message + "\n");
     }
 
+    /**
+     * Clears the text from the chat input field, typically used after a message has been sent.
+     */
     public void clearChatInput() {
         chatInput.setText("");
     }
 
+    /**
+     * Returns the text currently entered in the chat input field.
+     * 
+     * @return the text from the chat input field
+     */
     public String getChatInput() {
         return chatInput.getText();
     }
 
+    /**
+     * Returns the start time of the game, typically used for tracking game duration.
+     * 
+     * @return the start time of the game in milliseconds
+     */
     public long getStartTime() {
         return startTime;
     }
 
+    /**
+     * Sets the start time of the game, typically called at the beginning of a game session.
+     * 
+     * @param startTime the start time to set, in milliseconds
+     */
     public void setStartTime(long startTime) {
         this.startTime = startTime;
     }

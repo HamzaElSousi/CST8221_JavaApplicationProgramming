@@ -1,7 +1,6 @@
 /*
  * Student name && ID : Hamza El Sousi , 040982818
  * Student name && ID : Mansi Joshi , 041091664
- * Assignment:
  * Lab Prof: Paulo Sousa
  * Assignment: A12
  * Lab Prof: Paulo Sousa
@@ -11,12 +10,25 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.Timer;
 
+/**
+ * The {@code Connect4Controller} class acts as the controller in the MVC design pattern for the Connect Four game.
+ * It handles user interactions by managing action listeners for the game's UI components, such as buttons for the game board,
+ * chat input, and menu items. It also controls the game's state, including starting and stopping timers for player turns,
+ * and updates the model and view based on player actions.
+ */
 public class Connect4Controller {
     private Connect4Model model;
     private Connect4View view;
     private Timer playerTimer;
     private long currentPlayerStartTime;
 
+    /**
+     * Constructs a {@code Connect4Controller} with specified model and view components, initializing the game's UI
+     * action listeners and starting the game's timer.
+     * 
+     * @param model the game model
+     * @param view the game view
+     */
     public Connect4Controller(Connect4Model model, Connect4View view) {
         this.model = model;
         this.view = view;
@@ -37,29 +49,46 @@ public class Connect4Controller {
         playerTimer = new Timer(1000, new TimerListener());
     }
 
+    /**
+     * Restarts the game, reinitializing the board in the model and resetting the view and timer.
+     */
     private void restartGame() {
         model.initializeBoard();
         view.resetBoard();
         view.updateStatus("Player 1's turn", 0, 0, 0); // Reset chip counts and time
     }
 
+    /**
+     * Starts the timer for the current player's turn.
+     */
     private void startTimer() {
         currentPlayerStartTime = System.currentTimeMillis();
         playerTimer.start();
     }
 
+    /**
+     * Stops the timer.
+     */
     private void stopTimer() {
         playerTimer.stop();
     }
 
+    /**
+     * Updates the timer display in the view with the elapsed time since the current player's turn started.
+     */
     private void updateTimer() {
         long elapsedTime = System.currentTimeMillis() - currentPlayerStartTime;
         int elapsedSeconds = (int) (elapsedTime / 1000); // Convert milliseconds to seconds
         view.updateStatus("Player " + model.getCurrentPlayer() + "'s turn", model.getRedChipsPlayed(), model.getYellowChipsPlayed(), elapsedSeconds);
     }
 
+    /**
+     * Inner class to handle button clicks on the game board. It processes the player's move and updates
+     * the model and view accordingly.
+     */
     private class ButtonListener implements ActionListener {
-        private final int row;
+        @SuppressWarnings("unused") //  used
+		private final int row;
         private final int column;
 
         public ButtonListener(int row, int column) {
