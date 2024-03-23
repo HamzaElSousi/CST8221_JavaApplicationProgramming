@@ -3,3 +3,20 @@
 *.class
 *.classpath
 *.project
+
+
+# Ignore IDE-specific files and directories
+/.idea/
+*.iml
+/.classpath
+/.settings/
+
+# Ignore build directories
+/bin/
+/out/
+/target/
+/build/
+
+# Ignore other files that may contain sensitive information or local configurations
+*.log
+*.properties

@@ -1,101 +1,100 @@
-/*
- * Student name && ID : Hamza El Sousi , 040982818
- * Student name && ID : Mansi Joshi , 041091664
- * Lab Prof: Paulo Sousa
- * Assignment: A12
- * Lab Prof: Paulo Sousa
- * MVC Desgin: CONTROLLER
- */
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.swing.Timer;
+import javax.swing.JOptionPane;
 
 /**
- * The {@code Connect4Controller} class acts as the controller in the MVC design pattern for the Connect Four game.
- * It handles user interactions by managing action listeners for the game's UI components, such as buttons for the game board,
- * chat input, and menu items. It also controls the game's state, including starting and stopping timers for player turns,
- * and updates the model and view based on player actions.
+ * The {@code Connect4Controller} class serves as the controller in the MVC (Model-View-Controller)
+ * design pattern for the Connect4 game. It is responsible for managing the interaction between the
+ * game's model ({@code Connect4Model}) and view ({@code Connect4View}), including handling user
+ * actions and updating the view based on changes in the model.
+ *
+ * <p>This class initializes action listeners for the game's GUI components, such as the grid buttons,
+ * chat input, and menu items. It also controls the game's timer through a {@code ControllableTimer} instance.</p>
+ *
+ * <p><b>Student names and IDs:</b>
+ * <ul>
+ * <li>Hamza El Sousi, 040982818</li>
+ * <li>Mansi Joshi, 041091664</li>
+ * </ul></p>
+ *
+ * <p><b>Lab Professors:</b> Paulo Sousa & Daniel Cormier</p>
+ * <p><b>Assignment:</b> A22</p>
+ * <p><b>MVC Design:</b> CONTROLLER</p>
  */
+
 public class Connect4Controller {
     private Connect4Model model;
     private Connect4View view;
-    private Timer playerTimer;
-    private long currentPlayerStartTime;
+    private ControllableTimer timer;
 
     /**
-     * Constructs a {@code Connect4Controller} with specified model and view components, initializing the game's UI
-     * action listeners and starting the game's timer.
-     * 
-     * @param model the game model
-     * @param view the game view
+     * Constructs a {@code Connect4Controller} with specified model and view components.
+     * Initializes the game's GUI by setting up action listeners for various interactive
+     * components and starting the game timer.
+     *
+     * @param model the model component of the MVC design pattern, representing the game's state
+     * @param view the view component of the MVC design pattern, representing the game's GUI
      */
     public Connect4Controller(Connect4Model model, Connect4View view) {
         this.model = model;
         this.view = view;
-
+        
         // Initialize action listeners for the grid buttons
         for (int i = 0; i < Connect4Model.getRows(); i++) {
             for (int j = 0; j < Connect4Model.getColumns(); j++) {
                 this.view.setActionListenerForButton(i, j, new ButtonListener(i, j));
             }
         }
-
+        
         // Initialize action listeners for chat and menu items
         this.view.setActionListenerForChatInput(new ChatListener());
-        this.view.setActionListenerForRestartItem(new RestartListener());
-        this.view.setActionListenerForExitItem(new ExitListener());
-
-        // Initialize a single timer for both players
-        playerTimer = new Timer(1000, new TimerListener());
+        this.view.setActionListenerForRestartItem(e -> restartGame());
+        this.view.setActionListenerForExitItem(e -> System.exit(0));
+        
+        // Initialize and start the timer
+        timer = new ControllableTimer(view);
+        timer.start();
     }
 
     /**
-     * Restarts the game, reinitializing the board in the model and resetting the view and timer.
+     * Restarts the game by reinitializing the game board in both the model and view, and resetting
+     * the timer. It also updates the game status to indicate which player's turn is next.
      */
     private void restartGame() {
         model.initializeBoard();
         view.resetBoard();
-        view.updateStatus("Player 1's turn", 0, 0, 0); // Reset chip counts and time
+        view.updateStatus("Player R's turn");
+        // Reset the timer
+        timer.setStatus(ControllableTimer.RESET);
     }
 
     /**
-     * Starts the timer for the current player's turn.
-     */
-    private void startTimer() {
-        currentPlayerStartTime = System.currentTimeMillis();
-        playerTimer.start();
-    }
-
-    /**
-     * Stops the timer.
-     */
-    private void stopTimer() {
-        playerTimer.stop();
-    }
-
-    /**
-     * Updates the timer display in the view with the elapsed time since the current player's turn started.
-     */
-    private void updateTimer() {
-        long elapsedTime = System.currentTimeMillis() - currentPlayerStartTime;
-        int elapsedSeconds = (int) (elapsedTime / 1000); // Convert milliseconds to seconds
-        view.updateStatus("Player " + model.getCurrentPlayer() + "'s turn", model.getRedChipsPlayed(), model.getYellowChipsPlayed(), elapsedSeconds);
-    }
-
-    /**
-     * Inner class to handle button clicks on the game board. It processes the player's move and updates
-     * the model and view accordingly.
+     * The {@code ButtonListener} class implements {@code ActionListener} to handle actions
+     * performed on the game board's buttons. Each button press results in a move being made
+     * in the game, with subsequent checks for a win or draw condition.
      */
     private class ButtonListener implements ActionListener {
-        @SuppressWarnings("unused") //  used
+        @SuppressWarnings("unused")//used
 		private final int row;
         private final int column;
 
+        /**
+         * Constructs a {@code ButtonListener} for a specific row and column on the game board.
+         *
+         * @param row the row index of the button
+         * @param column the column index of the button
+         */
         public ButtonListener(int row, int column) {
             this.row = row;
             this.column = column;
         }
 
+        /**
+         * Responds to button actions by making a move in the game model, updating the game view,
+         * and checking for game end conditions.
+         *
+         * @param e the event object representing the action event
+         */
         @Override
         public void actionPerformed(ActionEvent e) {
             int nextRow = model.findNextRow(column);
@@ -103,48 +102,40 @@ public class Connect4Controller {
                 model.makeMove(column);
                 view.updateBoard(nextRow, column, model.getCurrentPlayer());
                 if (model.checkWinner()) {
-                    stopTimer(); // Stop the timer when the game ends
-                    view.updateStatus("Player " + model.getCurrentPlayer() + " wins!", model.getRedChipsPlayed(), model.getYellowChipsPlayed(), 0);
+                    String winner = "Player " + model.getCurrentPlayer() + " wins!";
+                    JOptionPane.showMessageDialog(view.getFrame(), winner, "Game Over", JOptionPane.INFORMATION_MESSAGE);
                     view.disableAllButtons();
+                    // Stop the timer
+                    timer.setStatus(ControllableTimer.STOP);
                 } else if (model.isDraw()) {
-                    stopTimer(); // Stop the timer when the game ends
-                    view.updateStatus("The game is a draw!", model.getRedChipsPlayed(), model.getYellowChipsPlayed(), 0);
+                    JOptionPane.showMessageDialog(view.getFrame(), "The game is a draw!", "Game Over", JOptionPane.INFORMATION_MESSAGE);
                     view.disableAllButtons();
+                    // Stop the timer
+                    timer.setStatus(ControllableTimer.STOP);
                 } else {
                     model.switchPlayer();
-                    startTimer(); // Start the timer for the next player's turn
+                    view.updateStatus("Player " + model.getCurrentPlayer() + "'s turn");
                 }
             }
         }
     }
 
+    /**
+     * The {@code ChatListener} class implements {@code ActionListener} to handle actions performed
+     * in the chat input field. It sends the chat message to the game's chat area.
+     */
     private class ChatListener implements ActionListener {
         @Override
+        /**
+         * Responds to chat input actions by appending the input message to the game's chat area
+         * and clearing the input field for new messages.
+         *
+         * @param e the event object representing the action event
+         */
         public void actionPerformed(ActionEvent e) {
             String message = view.getChatInput();
             view.appendChat("Player: " + message);
             view.clearChatInput();
-        }
-    }
-
-    private class RestartListener implements ActionListener {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            restartGame();
-        }
-    }
-
-    private class ExitListener implements ActionListener {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            System.exit(0);
-        }
-    }
-
-    private class TimerListener implements ActionListener {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            updateTimer();
         }
     }
 }

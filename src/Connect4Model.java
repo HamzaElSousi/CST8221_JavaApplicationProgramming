@@ -1,49 +1,51 @@
-/*
- * Student name && ID : Hamza El Sousi , 040982818
- * Student name && ID : Mansi Joshi , 041091664
- * Lab Prof: Paulo Sousa
- * Assignment: A12
- * Lab Prof: Paulo Sousa
- * MVC Desgin: MODEL 
- */
-
-
 /**
- * Represents the model for a Connect Four game, holding the game's state including the board,
- * the current player, and the number of chips played by each player. This class provides methods
- * to initialize the game, make moves, check for a win or a draw, and switch the current player.
+ * The {@code Connect4Model} class represents the model component in the MVC (Model-View-Controller)
+ * design pattern for the Connect4 game. It encapsulates the game's state, including the game board,
+ * the current player, and the logic for making moves, checking for a winner, and determining a draw.
+ *
+ * <p>This class maintains a 2D array to represent the game board where each cell can be empty, occupied
+ * by player 'R' (Red), or occupied by player 'Y' (Yellow). The class provides methods to initialize the
+ * game board, make moves, switch players, and check for game-ending conditions.</p>
+ *
+ * <p><b>Student names and IDs:</b>
+ * <ul>
+ * <li>Hamza El Sousi, 040982818</li>
+ * <li>Mansi Joshi, 041091664</li>
+ * </ul>
+ *
+ * <p><b>Lab Professors:</b> Paulo Sousa && Daniel Cormier</p>
+ * <p><b>Assignment:</b> A22</p>
+ * <p><b>MVC Design:</b> MODEL</p>
  */
 public class Connect4Model {
+	/**
+	 * Constant to represent the amount of rows in game
+	 */
     private static final int ROWS = 6;
+    /**
+	 * Constant to represent the amount of columns in game
+	 */
     private static final int COLUMNS = 7;
+    /**
+	 * two dimension array to represent grid/board in game
+	 */
     private char[][] board;
+    /**
+	 * currentPlayer represents the players turn at a given point in time during game 
+	 */
     private char currentPlayer;
-    private int redChipsPlayed;
-    private int yellowChipsPlayed;
-    //public static final int EMPTY = -1;
-    
-    /**
-     * Constant for Yellow player
-     */
-    public static final int RED_PLAYER = 0; // Add this constant
-    /**
-     * Constant for Yellow player
-     */
-    public static final int YELLOW_PLAYER = 1;
 
     /**
-     * Initializes a new Connect4Model with an empty board and sets the starting player.
+     * Constructs a new Connect4Model and initializes the game board and the starting player.
      */
     public Connect4Model() {
         board = new char[getRows()][getColumns()];
         currentPlayer = 'R'; // Starting player, R for Red, Y for Yellow
         initializeBoard();
-        redChipsPlayed = 0;
-        yellowChipsPlayed = 0;
     }
 
     /**
-     * Initializes the game board to its starting state, with all cells empty.
+     * Initializes the game board to an empty state, with each cell set to '.'.
      */
     void initializeBoard() {
         for (int i = 0; i < getRows(); i++) {
@@ -54,11 +56,12 @@ public class Connect4Model {
     }
 
     /**
-     * Attempts to place a chip in the specified column for the current player. It automatically
-     * calculates the appropriate row based on existing chips in the column.
-     * 
-     * @param column the column index where the current player wants to place a chip
-     * @return true if the move was successful, false if the column is full or invalid
+     * Attempts to make a move for the current player at the specified column. If the move is successful,
+     * the game board is updated and the method returns {@code true}. If the move cannot be made (e.g.,
+     * the column is full or invalid), the method returns {@code false}.
+     *
+     * @param column the column where the move is to be made
+     * @return {@code true} if the move was successful, {@code false} otherwise
      */
     public boolean makeMove(int column) {
         if (column < 0 || column >= getColumns()) {
@@ -68,11 +71,6 @@ public class Connect4Model {
         for (int i = getRows() - 1; i >= 0; i--) {
             if (board[i][column] == '.') {
                 board[i][column] = currentPlayer;
-                if (currentPlayer == 'R') {
-                    redChipsPlayed++;
-                } else {
-                    yellowChipsPlayed++;
-                }
                 return true;
             }
         }
@@ -80,11 +78,11 @@ public class Connect4Model {
         return false; // Column is full
     }
 
-
     /**
-     * Checks if the game is a draw, meaning the board is full and no more moves are possible.
-     * 
-     * @return true if the game is a draw, false otherwise
+     * Checks if the game has ended in a draw. A draw occurs when there are no empty cells left on the
+     * game board without any player winning.
+     *
+     * @return {@code true} if the game is a draw, {@code false} otherwise
      */
     public boolean isDraw() {
         for (int i = 0; i < getRows(); i++) {
@@ -98,10 +96,10 @@ public class Connect4Model {
     }
 
     /**
-     * Checks for a winning condition for the current player. A win occurs if four chips
-     * of the same player are aligned horizontally, vertically, or diagonally.
-     * 
-     * @return true if the current player has won, false otherwise
+     * Checks if the current player has won the game. This method checks for 4 consecutive markers
+     * of the current player horizontally, vertically, or diagonally.
+     *
+     * @return {@code true} if the current player has won, {@code false} otherwise
      */
     public boolean checkWinner() {
         // Horizontal check
@@ -155,15 +153,17 @@ public class Connect4Model {
         return false;
     }
 
+
     /**
-     * Switches the current player from red to yellow or yellow to red.
+     * Switches the turn to the next player.
      */
     public void switchPlayer() {
         currentPlayer = (currentPlayer == 'R') ? 'Y' : 'R';
     }
-    
+
     /**
-     * Prints the current state of the game board to the console, for debugging purposes.
+     * Prints the current state of the game board to the console. This method is primarily for
+     * debugging purposes.
      */
     public void displayBoard() {
         for (int i = 0; i < getRows(); i++) {
@@ -176,10 +176,11 @@ public class Connect4Model {
     }
     
     /**
-     * Finds the next available row in the specified column that is empty.
-     * 
+     * Finds the next available row in the specified column that can be occupied by a player's move.
+     * If the column is full, this method returns -1.
+     *
      * @param column the column to check
-     * @return the row index of the next empty space, or -1 if the column is full
+     * @return the index of the next available row, or -1 if the column is full
      */
     int findNextRow(int column) {
         for (int i = getRows() - 1; i >= 0; i--) {
@@ -190,64 +191,37 @@ public class Connect4Model {
         return -1; // Column is full
     }
 
- // Getter methods documentation...
-    
     /**
-     * Gets the value of the board at the specified row and column.
-     * 
+     * Retrieves the value at the specified row and column on the game board.
+     *
      * @param row the row index
      * @param column the column index
-     * @return the character representing the chip at the specified location or '.' if empty
+     * @return the character value at the specified location on the board
      */
     public char getBoardValue(int row, int column) {
         return board[row][column];
     }
 
     /**
-     * Returns the current player's symbol, where 'R' represents the Red player and 'Y'
-     * represents the Yellow player.
-     * 
-     * @return the character symbol of the current player
+     * Gets the current player ('R' or 'Y').
+     *
+     * @return the current player
      */
     public char getCurrentPlayer() {
         return currentPlayer;
     }
 
-    /**
-     * Retrieves the number of chips played by the Red player.
-     * 
-     * @return the total number of Red chips played on the board
-     */
-    public int getRedChipsPlayed() {
-        return redChipsPlayed;
-    }
+	/**
+	 * @return the columns
+	 */
+	public static int getColumns() {
+		return COLUMNS;
+	}
 
-    /**
-     * Retrieves the number of chips played by the Yellow player.
-     * 
-     * @return the total number of Yellow chips played on the board
-     */
-    public int getYellowChipsPlayed() {
-        return yellowChipsPlayed;
-    }
-
-    /**
-     * Returns the number of columns in the Connect Four game board. This is a static
-     * method because the board dimensions are constant and shared across all instances.
-     * 
-     * @return the number of columns in the game board
-     */
-    public static int getColumns() {
-        return COLUMNS;
-    }
-
-    /**
-     * Returns the number of rows in the Connect Four game board. Similar to {@code getColumns()},
-     * this is a static method for the same reason.
-     * 
-     * @return the number of rows in the game board
-     */
-    public static int getRows() {
-        return ROWS;
-    }
+	/**
+	 * @return the rows
+	 */
+	public static int getRows() {
+		return ROWS;
+	}
 }

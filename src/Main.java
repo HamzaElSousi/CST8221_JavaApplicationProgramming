@@ -1,9 +1,8 @@
 /*
  * Student name && ID : Hamza El Sousi , 040982818
  * Student name && ID : Mansi Joshi , 041091664
- * Lab Prof: Paulo Sousa
- * Assignment: A12
- * Lab Prof: Paulo Sousa
+ * Lab Prof: Paulo Sousa && Daniel Cormier
+ * Assignment: A22
  * MVC Desgin: MAIN
  */
 import javax.swing.SwingUtilities;
