@@ -5,6 +5,8 @@
  * Assignment: A22
  * MVC Desgin: MAIN
  */
+import java.awt.EventQueue;
+
 import javax.swing.SwingUtilities;
 
 /**
@@ -23,12 +25,14 @@ public class Main {
      * 
      * @param args not used in this application
      */
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            Connect4Model model = new Connect4Model();
-            Connect4View view = new Connect4View();
-            @SuppressWarnings("unused") //used
-			Connect4Controller controller = new Connect4Controller(model, view);
-        });
-    }
+	public static void main(String[] args) {
+	    EventQueue.invokeLater(() -> {
+	        Server server = new Server(6666); // Choose an appropriate port
+	        new Thread(() -> server.start(6666)).start(); // Start the server on a separate thread
+
+	        Connect4Model model = new Connect4Model();
+	        Connect4View view = new Connect4View();
+	        new Connect4Controller(model, view, null); // Initially, no client is passed
+	    });
+	}
 }

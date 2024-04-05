@@ -1,30 +1,41 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
+
 /**
- * The {@code Connect4View} class represents the graphical user interface (GUI) for the Connect4 game.
- * It handles the visualization of the game board, status updates, and chat interactions. This class
- * incorporates various GUI components like buttons for the game board, text areas for chat, and labels
+ * The {@code Connect4View} class represents the graphical user interface (GUI)
+ * for the Connect4 game. It handles the visualization of the game board, status
+ * updates, and chat interactions. This class incorporates various GUI
+ * components like buttons for the game board, text areas for chat, and labels
  * for displaying the current player and timer.
  * <p>
- * The class supports changing languages for the GUI elements through resource bundles and provides
- * methods for updating the game board, status, timer, and chat based on game progress. It is designed
- * to be used in conjunction with {@code Connect4Controller} and {@code Connect4Model} as part of an
- * MVC design pattern.
+ * The class supports changing languages for the GUI elements through resource
+ * bundles and provides methods for updating the game board, status, timer, and
+ * chat based on game progress. It is designed to be used in conjunction with
+ * {@code Connect4Controller} and {@code Connect4Model} as part of an MVC design
+ * pattern.
  * </p>
  *
- * <p><b>Student names and IDs:</b>
+ * <p>
+ * <b>Student names and IDs:</b>
  * <ul>
  * <li>Hamza El Sousi, 040982818</li>
  * <li>Mansi Joshi, 041091664</li>
  * </ul>
  * </p>
- * <p><b>Lab Professor:</b> Paulo Sousa</p>
- * <p><b>Assignment:</b> A22</p>
- * <p><b>MVC Design:</b> VIEW</p>
+ * <p>
+ * <b>Lab Professor:</b> Paulo Sousa
+ * </p>
+ * <p>
+ * <b>Assignment:</b> A22
+ * </p>
+ * <p>
+ * <b>MVC Design:</b> VIEW
+ * </p>
  *
  * @see javax.swing.JFrame
  * @see java.awt.event.ActionListener
@@ -42,6 +53,8 @@ public class Connect4View {
 	private JMenu languageMenu, networkMenu;
 	private JMenuItem englishItem, arabicItem, connectItem, disconnectItem;
 	private ResourceBundle bundle;
+	private Client client;
+
 
 	/**
 	 * Initializes a new instance of the {@code Connect4View} class by loading the
@@ -53,6 +66,13 @@ public class Connect4View {
 		createAndShowGUI();
 	}
 
+	public void setClient(Client client) {
+        this.client = client;
+        if (client != null) {
+            client.setView(this);
+        }
+    }
+	
 	/**
 	 * Returns the main frame of the game view.
 	 * 
@@ -107,7 +127,9 @@ public class Connect4View {
 		connectItem = new JMenuItem(bundle.getString("connect"));
 		disconnectItem = new JMenuItem(bundle.getString("disconnect"));
 		networkMenu.add(connectItem);
+		connectItem.setActionCommand("connect");
 		networkMenu.add(disconnectItem);
+		disconnectItem.setActionCommand("dissconnect");
 		menuBar.add(networkMenu);
 
 		frame.setJMenuBar(menuBar);
@@ -175,20 +197,31 @@ public class Connect4View {
 	}
 
 	private void initializeChatPanel(JPanel rightPanel) {
-		JPanel chatPanel = new JPanel();
-		chatPanel.setLayout(new BorderLayout());
-		chatPanel.setBorder(BorderFactory.createTitledBorder(bundle.getString("chat")));
-
-		chatArea = new JTextArea(20, 30);
-		chatArea.setEditable(false);
-		JScrollPane scrollPane = new JScrollPane(chatArea);
-		chatInput = new JTextField();
-
-		chatPanel.add(scrollPane, BorderLayout.CENTER);
-		chatPanel.add(chatInput, BorderLayout.SOUTH);
-
-		rightPanel.add(chatPanel, BorderLayout.CENTER);
+	    JPanel chatPanel = new JPanel(new BorderLayout());
+	    chatArea = new JTextArea(10, 20);
+	    chatArea.setEditable(false); // Prevent direct editing of the chat area
+	    JScrollPane chatScrollPane = new JScrollPane(chatArea); // Allow scrolling
+	    
+	    chatInput = new JTextField();
+	    chatInput.addActionListener(new ChatInputListener()); // Add listener for "Enter" key press
+	    chatPanel.add(chatScrollPane, BorderLayout.CENTER);
+	    chatPanel.add(chatInput, BorderLayout.SOUTH);
+	    
+	    rightPanel.add(chatPanel, BorderLayout.SOUTH); // Make sure this is laid out correctly in your UI
 	}
+
+	private class ChatInputListener implements ActionListener {
+	    @Override
+	    public void actionPerformed(ActionEvent e) {
+	        String message = chatInput.getText();
+	        if (!message.isEmpty() && client != null) {
+	            client.sendChatMessage(message); // Use the client instance to send the message
+	            chatInput.setText(""); // Clear the input field after sending
+	        }
+	    }
+	}
+
+
 
 	// Setters for action listeners
 
@@ -235,6 +268,10 @@ public class Connect4View {
 	public void setActionListenerForExitItem(ActionListener listener) {
 		exitItem.addActionListener(listener);
 	}
+	
+	public void setActionListenerForMenuItems(ActionListener listener) {
+		connectItem.addActionListener(listener);
+	}
 
 	// Additional private helper methods and public setter methods would also be
 	// documented in a similar fashion.
@@ -249,39 +286,38 @@ public class Connect4View {
 	 * @param player The symbol of the player making the move.
 	 */
 	// Methods for updating the view
-    public void updateBoard(int row, int column, char player) {
-        JButton button = buttons[row][column];
-        ImageIcon icon;
-        if (player == 'R') {
-            // Load the red disc image
-            icon = new ImageIcon(getClass().getResource("Red.gif"));
-        } else {
-            // Load the yellow disc image
-            icon = new ImageIcon(getClass().getResource("Yellow.gif"));
-        }
-        // Set the image icon to the button
-        button.setIcon(icon);
-        //button.setEnabled(false);
-        button.revalidate();
-        button.repaint();
+	public void updateBoard(int row, int column, char player) {
+		JButton button = buttons[row][column];
+		ImageIcon icon;
+		if (player == 'R') {
+			// Load the red disc image
+			icon = new ImageIcon(getClass().getResource("Red.gif"));
+		} else {
+			// Load the yellow disc image
+			icon = new ImageIcon(getClass().getResource("Yellow.gif"));
+		}
+		// Set the image icon to the button
+		button.setIcon(icon);
+		// button.setEnabled(false);
+		button.revalidate();
+		button.repaint();
 
-    }
+	}
 
 	/**
 	 * Resets the game board to its initial state. This includes clearing all button
 	 * texts and enabling them for new moves. It is typically called at the start of
 	 * a new game or when the game is restarted.
 	 */
-    public void resetBoard() {
-        for (int i = 0; i < Connect4Model.getRows(); i++) {
-            for (int j = 0; j < Connect4Model.getColumns(); j++) {
-                buttons[i][j].setIcon(null); // Remove the icon from the button
-                buttons[i][j].setEnabled(true);
-                buttons[i][j].setBackground(Color.WHITE);
-            }
-        }
-    }
-
+	public void resetBoard() {
+		for (int i = 0; i < Connect4Model.getRows(); i++) {
+			for (int j = 0; j < Connect4Model.getColumns(); j++) {
+				buttons[i][j].setIcon(null); // Remove the icon from the button
+				buttons[i][j].setEnabled(true);
+				buttons[i][j].setBackground(Color.WHITE);
+			}
+		}
+	}
 
 	/**
 	 * Updates the status label to display a given message. This method is typically
@@ -305,7 +341,8 @@ public class Connect4View {
 	}
 
 	/**
-	 * Disables all buttons on the game board. This method is typically called when the game has ended to prevent further moves.
+	 * Disables all buttons on the game board. This method is typically called when
+	 * the game has ended to prevent further moves.
 	 */
 	public void disableAllButtons() {
 		for (int i = 0; i < Connect4Model.getRows(); i++) {
@@ -316,7 +353,8 @@ public class Connect4View {
 	}
 
 	/**
-	 * Appends a message to the chat area. This method is typically used to display chat messages from players.
+	 * Appends a message to the chat area. This method is typically used to display
+	 * chat messages from players.
 	 * 
 	 * @param message The message to be added to the chat area.
 	 */
@@ -325,7 +363,8 @@ public class Connect4View {
 	}
 
 	/**
-	 * Clears the chat input field. This is typically called after a chat message has been sent.
+	 * Clears the chat input field. This is typically called after a chat message
+	 * has been sent.
 	 */
 	public void clearChatInput() {
 		chatInput.setText("");
@@ -339,4 +378,10 @@ public class Connect4View {
 	public String getChatInput() {
 		return chatInput.getText();
 	}
+	
+	public void displayChatMessage(String message) {
+	    chatArea.append(message + "\n");
+	    chatArea.setCaretPosition(chatArea.getDocument().getLength()); // Auto-scroll to the latest message
+	}
+
 }
