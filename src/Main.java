@@ -30,9 +30,33 @@ public class Main {
 	        Server server = new Server(6666); // Choose an appropriate port
 	        new Thread(() -> server.start(6666)).start(); // Start the server on a separate thread
 
-	        Connect4Model model = new Connect4Model();
+	        Client client = new Client(null, 0, null);
+	        Connect4Model model = new Connect4Model(client);
 	        Connect4View view = new Connect4View();
 	        new Connect4Controller(model, view, null); // Initially, no client is passed
+	        
+	     // Call the method to print active threads
+	        printActiveThreads();
 	    });
+	    
+	    
 	}
+	private static void printActiveThreads() {
+        int activeThreadCount = Thread.activeCount();
+        System.out.println("Number of active threads: " + activeThreadCount);
+
+        ThreadGroup threadGroup = Thread.currentThread().getThreadGroup();
+        while (threadGroup.getParent() != null) {
+            threadGroup = threadGroup.getParent();
+        }
+
+        Thread[] threads = new Thread[threadGroup.activeCount()];
+        threadGroup.enumerate(threads);
+
+        for (Thread thread : threads) {
+            if (thread != null) {
+                System.out.println("Thread Name: " + thread.getName() + ", State: " + thread.getState());
+            }
+        }
+    }
 }

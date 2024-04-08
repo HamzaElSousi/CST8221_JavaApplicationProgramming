@@ -35,13 +35,35 @@ public class Connect4Model {
 	 */
     private char currentPlayer;
 
+    // Add fields for network communication
+    private Client client;
     /**
      * Constructs a new Connect4Model and initializes the game board and the starting player.
      */
-    public Connect4Model() {
+//    public Connect4Model() {
+//        board = new char[getRows()][getColumns()];
+//        currentPlayer = 'R'; // Starting player, R for Red, Y for Yellow
+//        initializeBoard();
+//    }
+    
+
+    // Add constructor to initialize the client
+    public Connect4Model(Client client) {
+        this.client = client;
         board = new char[getRows()][getColumns()];
         currentPlayer = 'R'; // Starting player, R for Red, Y for Yellow
         initializeBoard();
+    }
+
+    public synchronized String getSerializedGameState() {
+        StringBuilder builder = new StringBuilder();
+        for (char[] row : board) {
+            for (int cell : row) {
+                builder.append(cell);
+            }
+            builder.append(";"); // Use semicolon as a row delimiter
+        }
+        return builder.toString();
     }
 
     /**
@@ -71,12 +93,15 @@ public class Connect4Model {
         for (int i = getRows() - 1; i >= 0; i--) {
             if (board[i][column] == '.') {
                 board[i][column] = currentPlayer;
+                // Send move to the server
+                client.sendMoveMessage(column);
                 return true;
             }
         }
-
+        client.sendMoveMessage(column);
         return false; // Column is full
     }
+
 
     /**
      * Checks if the game has ended in a draw. A draw occurs when there are no empty cells left on the
@@ -91,6 +116,7 @@ public class Connect4Model {
                     return false; // There is still an empty space
                 }
             }
+            client.sendDrawMessage();
         }
         return true; // No empty spaces
     }
@@ -109,6 +135,7 @@ public class Connect4Model {
                     board[i][j+1] == currentPlayer && 
                     board[i][j+2] == currentPlayer && 
                     board[i][j+3] == currentPlayer) {
+                	client.sendWinMessage();
                     return true;
                 }
             }
@@ -121,6 +148,7 @@ public class Connect4Model {
                     board[i+1][j] == currentPlayer && 
                     board[i+2][j] == currentPlayer && 
                     board[i+3][j] == currentPlayer) {
+                	client.sendWinMessage();
                     return true;
                 }
             }
@@ -133,7 +161,8 @@ public class Connect4Model {
                     board[i-1][j+1] == currentPlayer && 
                     board[i-2][j+2] == currentPlayer && 
                     board[i-3][j+3] == currentPlayer) {
-                    return true;
+                	client.sendWinMessage();
+                	return true;
                 }
             }
         }
@@ -145,6 +174,7 @@ public class Connect4Model {
                     board[i-1][j-1] == currentPlayer && 
                     board[i-2][j-2] == currentPlayer && 
                     board[i-3][j-3] == currentPlayer) {
+                	client.sendWinMessage();
                     return true;
                 }
             }
@@ -159,6 +189,7 @@ public class Connect4Model {
      */
     public void switchPlayer() {
         currentPlayer = (currentPlayer == 'R') ? 'Y' : 'R';
+        client.sendPlayerSwitchMessage(currentPlayer);
     }
 
     /**
@@ -223,5 +254,17 @@ public class Connect4Model {
 	 */
 	public static int getRows() {
 		return ROWS;
+	}
+	
+	public void updateGameState(char[][] updatedBoard, char updatedPlayer) {
+	    this.board = updatedBoard;
+	    this.currentPlayer = updatedPlayer;
+	}
+
+	/**
+	 * @return the board
+	 */
+	char[][] getBoard() {
+		return board;
 	}
 }

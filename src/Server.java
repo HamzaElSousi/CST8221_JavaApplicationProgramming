@@ -11,195 +11,311 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-
+import javax.swing.SwingUtilities;
 
 public class Server {
-    private ServerSocket serverSocket;
-    private final List<ClientHandler> clients = new ArrayList<>();
-    public ServerGui serverGui;
+	private ServerSocket serverSocket;
+	private final List<ClientHandler> clients = new ArrayList<>();
+	public ServerGui serverGui;
+	private int port;
+	private Connect4Model model = new Connect4Model(null);
 
-    public Server(int port) {
-        EventQueue.invokeLater(() -> serverGui = new ServerGui());
+	public Server(int port) {
+        this.port = port;
+        initializeGui();
     }
-    
- public Server() {
-	 EventQueue.invokeLater(() -> serverGui = new ServerGui());
- }
+
+    public Server() {
+        initializeGui();
+    }
+
+    private void initializeGui() {
+        EventQueue.invokeLater(() -> {
+            serverGui = new ServerGui();
+            serverGui.launch();
+        });
+    }
 
 	// Inside Server class
- public synchronized void removeClient(ClientHandler clientHandler) {
-     clients.remove(clientHandler);
-     System.out.println("Client " + clientHandler.getClientSocket().getRemoteSocketAddress() + " removed. ID:0016");
-     // You can also add more cleanup code here if needed
- }
-
- public boolean isPortAvailable(int port) {
-	    try (ServerSocket serverSocket = new ServerSocket(port)) {
-	        return true;
-	    } catch (IOException e) {
-	        return false; // Either the port is in use or it's an invalid port number
-	    }
-	}
- 
- public void startServer(int port) {
-	    if (!isPortAvailable(port)) {
-	        System.out.println("Port " + port + " is unavailable. Please use a different port.");
-	        return;
-	    }
-	    // Server starting logic...
+	public synchronized void removeClient(ClientHandler clientHandler) {
+		clients.remove(clientHandler);
+		System.out.println("Client " + clientHandler.getClientSocket().getRemoteSocketAddress() + " removed. ID:0017");
+		// You can also add more cleanup code here if needed
 	}
 
-    public void start(int port) {
-        try {
-            serverSocket = new ServerSocket(port);
-            System.out.println("Server started on port " + port + " ID:0001");
+	public boolean isPortAvailable(int port) {
+		try (ServerSocket serverSocket = new ServerSocket(this.port)) {
+			return true;
+		} catch (IOException e) {
+			return false; // Either the port is in use or it's an invalid port number
+		}
+	}
 
-            while (!serverSocket.isClosed()) {
-                try {
-                    Socket clientSocket = serverSocket.accept();
-                    System.out.println("New client connected: " + clientSocket.getRemoteSocketAddress());
-                    ClientHandler clientHandler = new ClientHandler(clientSocket, this);
-                    clients.add(clientHandler);
-                    new Thread(clientHandler).start();
-                } catch (IOException e) {
-                	System.out.println("Server exception: " + e.getMessage() + " ID:0002");
-                    e.printStackTrace();
-                }
-            }
-        } catch (IOException e) {
-            System.out.println("Server exception: " + e.getMessage() + " ID:0003");
-            if (serverSocket.isClosed()) {
-                System.out.println("Server Socket is closed, exiting." + "ID:0014");
-            } else {
-                System.out.println("Exception in client handling: " + e.getMessage());
-                // Log or handle the exception
-            }
-        }
-        
-    }
 
-    public void stop() {
+	public void start(int port) {
+		new Thread(() -> {
+		try {
+			serverSocket = new ServerSocket(this.port);
+			System.out.println("Server started on port " + this.port + " ID:0001");
+
+			while (!serverSocket.isClosed()) {
+				try {
+					Socket clientSocket = serverSocket.accept();
+					System.out.println("New client connected: " + clientSocket.getRemoteSocketAddress());
+					ClientHandler clientHandler = new ClientHandler(clientSocket, this, model); // Pass model her;
+					clients.add(clientHandler);
+					new Thread(clientHandler).start();
+				} catch (IOException e) {
+					System.out.println("Server exception: " + e.getMessage() + " ID:0002");
+					e.printStackTrace();
+				}
+			}
+		} catch (IOException e) {
+			System.out.println("Server exception: " + e.getMessage() + " ID:0003");
+			if (serverSocket.isClosed()) {
+				System.out.println("Server Socket is closed, exiting." + "ID:0014");
+			} else {
+				System.out.println("Exception in client handling: " + e.getMessage());
+				// Log or handle the exception
+			}
+		}
+		}).start();
+
+	}
+
+	public void stop() {
         try {
-            if (serverSocket != null) {
+            for (ClientHandler client : clients) {
+                client.closeClientSocket(); // Ensure all client sockets are closed
+            }
+            if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
             }
-            System.out.println("Server stopped"+ " ID:0004");
         } catch (IOException e) {
-            System.out.println("Error closing server: " + e.getMessage()+ " ID:0005");
-            e.printStackTrace();
-        }
-    }
-    
-    public synchronized void broadcastMessage(String message) {
-        for (ClientHandler client : clients) {
-            client.sendMessage(message);
+            System.out.println("Error closing server: " + e.getMessage() + " ID:0005");
         }
     }
 
-    private class ClientHandler implements Runnable {
-        private Socket clientSocket;
-        private PrintWriter out;
-        private BufferedReader in;
-        private Server server;
+	public synchronized void broadcastMessage(String message) {
+		for (ClientHandler client : clients) {
+			client.sendMessage(message);
+		}
+	}
 
-        public ClientHandler(Socket socket, Server server) {
-            this.clientSocket = socket;
-            this.server = server;
-            try {
-                out = new PrintWriter(clientSocket.getOutputStream(), true);
-                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                System.out.println("New client connected"+ " ID:0006");
-            } catch (IOException e) {
-                System.out.println("Error creating streams: " + e.getMessage()+ " ID:0007");
-             // Inside the finally block of the ClientHandler run method
-            }  finally {
+	private class ClientHandler implements Runnable {
+		private Socket clientSocket;
+		private PrintWriter out;
+		private BufferedReader in;
+		private Server server;
+		private Connect4Model model;
+
+//        public ClientHandler(Socket socket, Server server) {
+//            this.clientSocket = socket;
+//            this.server = server;
+//            try {
+//                out = new PrintWriter(clientSocket.getOutputStream(), true);
+//                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+//                System.out.println("New client connected"+ " ID:0006");
+//            } catch (IOException e) {
+//                System.out.println("Error creating streams: " + e.getMessage()+ " ID:0007");
+//             // Inside the finally block of the ClientHandler run method
+//            }  finally {
 //                    server.removeClient(this);
-                    try {
-                        in.close();
-                        out.close();
-                        clientSocket.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }}
-                }
+//                    try {
+//                        in.close();
+//                        out.close();
+//                        clientSocket.close();
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }}
+//                }
 
-        public Socket getClientSocket() {
-            return clientSocket;
-        }
+		public ClientHandler(Socket socket, Server server, Connect4Model model) {
+			this.clientSocket = socket;
+			this.server = server;
+			this.model = model;
+			try {
+				out = new PrintWriter(clientSocket.getOutputStream(), true);
+				in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+				System.out.println("New client connected" + " ID:0006");
+			} catch (IOException e) {
+				System.out.println("Error creating streams: " + e.getMessage() + " ID:0007");
+				try {
+					if (clientSocket != null && !clientSocket.isClosed())
+						clientSocket.close();
+				} catch (IOException log) {
+					log.printStackTrace();
+				}
+				server.removeClient(this);
+				return; // Exit the constructor if an exception occurs
+			}
 
-		@Override
-        public void run() {
-            try {
-                String inputLine;
-                while ((inputLine = in.readLine()) != null) {
-                    System.out.println("Message from client " + clientSocket.getRemoteSocketAddress() + ": " + inputLine);
-                    String[] parts = inputLine.split(NetworkProtocol.MESSAGE_SEPARATOR);
-                    String type = parts[0];
+			// Move the resource cleanup logic outside the try-catch block
+			// This ensures that resources are only closed if they have been successfully
+			// initialized
+			// and avoids NullPointerExceptions
+		}
+		public synchronized void processMessage(String message, ClientHandler sender) {
+		    // Synchronized to prevent concurrent modifications of any shared resources
 
-                    switch (type) {
-                        case NetworkProtocol.PLAYER_CONNECT:
-                            // Established connection
-                            System.out.println("Connected from Server ID:0008");
-                            break;
-
-                        case NetworkProtocol.CHAT_MESSAGE:
-                            // Broadcast chat message
-                            String chatMsg = parts[1]; // Assuming the message follows "CHAT_MESSAGE#ActualMessage" format
-                            server.broadcastMessage("CHAT:" + chatMsg);
-                            System.out.println("Chat from case in Server ID:0009");
-                            break;
-
-                        case NetworkProtocol.GAME_MOVE:
-                            // Handle game move, validate, and broadcast new game state
-                            System.out.println("Game move from client ID:0010");
-                            break;
-
-                        case NetworkProtocol.PLAYER_DISCONNECT:
-                            // Handle client disconnect
-                            System.out.println("Disconnected from Server ID:0011");
-                            server.removeClient(this);
-                            return; // Exit the while loop and proceed to cleanup
-                            
-                        // Handle other cases
-                    }
-                }
-            } catch (IOException e) {
-                System.out.println("ClientHandler IOException for client " + clientSocket.getRemoteSocketAddress() + ": " + e.getMessage() + " ID:0012");
-            } finally {
-                // Cleanup logic here
-                server.removeClient(this);
-                closeClientSocket();
-                try {
-                    if (in != null) in.close();
-                    if (out != null) out.close();
-                    if (clientSocket != null) clientSocket.close();
-                } catch (IOException e) {
-                    System.out.println("Error closing client socket: " + e.getMessage() + " ID:0014");
-                }
-                System.out.println("Client " + clientSocket.getRemoteSocketAddress() + " cleanup complete ID:0015");
-            }
-        }
-		private void closeClientSocket() {
-		    try {
-		        if (in != null) in.close();
-		        if (out != null) out.close();
-		        if (clientSocket != null && !clientSocket.isClosed()) {
-		            clientSocket.close();
-		        }
-		    } catch (IOException e) {
-		        System.out.println("Error closing client socket: " + e.getMessage() + " ID:0015");
+		    if (message.startsWith(NetworkProtocol.CHAT_MESSAGE)) {
+		        // Extract the actual chat message
+		        String chatMsg = message.substring(NetworkProtocol.CHAT_MESSAGE.length() + 1);
+		        broadcastMessage(NetworkProtocol.CHAT_MESSAGE + " " + ": " + chatMsg);
+		    } else if (message.startsWith(NetworkProtocol.GAME_MOVE)) {
+		        // Extract move details
+		        String moveDetails = message.substring(NetworkProtocol.GAME_MOVE.length() + 1);
+		        // Assuming moveDetails contains the column where the move was made
+		        // Update game state here based on the move
+		        
+		        // Optionally, broadcast the updated game state to all clients
+		        broadcastGameState();
 		    }
+		    // Handle other message types as needed
+		}
+		
+		public synchronized void broadcastMessage(String message) {
+		    // Iterate over a thread-safe collection of client handlers
+		    for (ClientHandler client : clients) {
+		        client.sendMessage(message);
+		    }
+		}
+		
+	
+		public synchronized void broadcastGameState() {
+		    String gameState = model.getSerializedGameState();
+		    server.broadcastMessage("GAME_STATE:" + gameState); // Use server's method to broadcast
 		}
 
 
-        public void sendMessage(String message) {
-            out.println(message);
-        }
-    }
-    
-    
+
+
+
+		@Override
+		public void run() {
+			try {
+				String inputLine;
+				while ((inputLine = in.readLine()) != null) {
+					System.out
+							.println("Message from client " + clientSocket.getRemoteSocketAddress() + ": " + inputLine);
+					String[] parts = inputLine.split(NetworkProtocol.MESSAGE_SEPARATOR);
+					if (parts.length < 2) {
+						System.out.println("Invalid message format received: " + inputLine);
+						continue;
+					}
+					String type = parts[0];
+					String content = parts[1];
+					switch (type) {
+					case NetworkProtocol.PLAYER_CONNECT:
+						// Established connection
+						handlePlayerConnect(content);
+						break;
+
+					case NetworkProtocol.CHAT_MESSAGE:
+						// Broadcast chat message
+						handleChatMessage(content);
+//						Client.displayChatMessage(content);
+//                            String chatMsg = parts[1]; // Assuming the message follows "CHAT_MESSAGE#ActualMessage" format
+						break;
+
+					case NetworkProtocol.GAME_MOVE:
+						// Handle game move, validate, and broadcast new game state
+						handleGameMove(content);
+						break;
+
+					case NetworkProtocol.PLAYER_DISCONNECT:
+						// Handle client disconnect
+						handlePlayerDisconnect();
+						return; // Exit the while loop and proceed to cleanup
+
+					// Handle other cases
+					}
+				}
+			} catch (IOException e) {
+				System.out.println("ClientHandler IOException for client " + clientSocket.getRemoteSocketAddress()
+						+ ": " + e.getMessage() + " ID:0012");
+			} finally {
+				// Cleanup logic here
+
+				cleanup();
+				System.out.println("Error closing client socket: " + " ID:0014");
+				System.out.println("Client " + clientSocket.getRemoteSocketAddress() + " cleanup complete ID:0015");
+			}
+		}
+
+		private void cleanup() {
+			try {
+				if (out != null)
+					out.close();
+				if (in != null)
+					in.close();
+				if (clientSocket != null && !clientSocket.isClosed())
+					clientSocket.close();
+			} catch (IOException e) {
+				System.out.println("Error cleaning up resources: " + e.getMessage());
+			} finally {
+				server.removeClient(this);
+				System.out.println(
+						"Cleanup completed for client " + getClientSocket().getRemoteSocketAddress() + " ID:0016");
+			}
+		}
+
+		private String clientName; // Declare a clientName variable in ClientHandler
+
+		private void handlePlayerConnect(String content) {
+		    this.clientName = content; // Assuming content is the username
+		    System.out.println(clientName + " connected. ID:0008");
+		}
+		private String getClientName() {
+		    return this.clientName;
+		}
+
+		private void handleChatMessage(String content) {
+			server.broadcastMessage("CHAT:" + content);
+			System.out.println("Chat from server ID:0009");
+			// Additional logic for handling chat messages can be added here
+		}
+
+		private void handleGameMove(String content) {
+		    // Parse the move from the content
+		    int column = Integer.parseInt(content); // Assuming content is the column index for simplicity
+		    model.makeMove(column); // Example method in Connect4Model to make a move
+		    broadcastGameState(); // Then broadcast the new game state
+		}
+
+
+		private void handlePlayerDisconnect() {
+			System.out.println("Disconnected from server ID:0011");
+			server.removeClient(this);
+			// Additional logic for handling player disconnect can be added here
+		}
+
+		public Socket getClientSocket() {
+			return clientSocket;
+		}
+
+		private void closeClientSocket() {
+			try {
+				if (in != null)
+					in.close();
+				if (out != null)
+					out.close();
+				if (clientSocket != null && !clientSocket.isClosed()) {
+					clientSocket.close();
+				}
+			} catch (IOException e) {
+				System.out.println("Error closing client socket: " + e.getMessage() + " ID:0018");
+			}
+		}
+
+		public void sendMessage(String message) {
+			out.println(message);
+		}
+	}
+
 	public class ServerGui extends JFrame {
 		private JPanel mainPane;
 		private JTextField nameField;
@@ -212,16 +328,35 @@ public class Server {
 			super("Server");
 			mainPane = new JPanel();
 			setGui();
-            addListener();
-            launch();
+			addListener();
+//			launch();
 		}
-		private void addListener() {
-            startButton.addActionListener(e -> {
-                int port = Integer.parseInt(getPort());
-                new Thread(() -> start(port)).start();
+
+		private void updateServerStatus(boolean isRunning) {
+            SwingUtilities.invokeLater(() -> {
+                startButton.setEnabled(!isRunning);
+                stopButton.setEnabled(isRunning);
+                // You might also want to update a status label here to inform the user about the server status
             });
-            stopButton.addActionListener(e -> stop());
         }
+
+		private void addListener() {
+			startButton.addActionListener(e -> {
+				try {
+					int port = Integer.parseInt(getPort());
+					if (isPortAvailable(port)) {
+						new Thread(() -> start(port)).start();
+					} else {
+						JOptionPane.showMessageDialog(this, "Port is unavailable. Please choose a different port.",
+								"Port Unavailable", JOptionPane.ERROR_MESSAGE);
+					}
+				} catch (NumberFormatException ex) {
+					JOptionPane.showMessageDialog(this, "Invalid port number. Please enter a valid port.",
+							"Invalid Input", JOptionPane.ERROR_MESSAGE);
+				}
+			});
+			stopButton.addActionListener(e -> stop());
+		}
 
 		public void addListener(ActionListener al) {
 			startButton.addActionListener(al);
@@ -278,5 +413,4 @@ public class Server {
 		}
 
 	}
-
 }

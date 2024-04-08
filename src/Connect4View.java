@@ -54,6 +54,8 @@ public class Connect4View {
 	private JMenuItem englishItem, arabicItem, connectItem, disconnectItem;
 	private ResourceBundle bundle;
 	private Client client;
+	private JLabel connectionStatusLabel; // Declare it with other UI components
+
 
 
 	/**
@@ -127,9 +129,40 @@ public class Connect4View {
 		connectItem = new JMenuItem(bundle.getString("connect"));
 		disconnectItem = new JMenuItem(bundle.getString("disconnect"));
 		networkMenu.add(connectItem);
-		connectItem.setActionCommand("connect");
+		connectItem.addActionListener(e -> {
+		    // Prompt for server address
+		    String host = JOptionPane.showInputDialog(frame, "Enter Server Address:", "Connect to Server", JOptionPane.QUESTION_MESSAGE);
+		    if (host != null && !host.isEmpty()) {
+		        // Prompt for port number
+		        String portStr = JOptionPane.showInputDialog(frame, "Enter Server Port:", "Connect to Server", JOptionPane.QUESTION_MESSAGE);
+		        int port = 0;
+		        try {
+		            port = Integer.parseInt(portStr);
+		            if (port <= 0 || port > 65535) throw new NumberFormatException("Port out of range");
+		            // Assuming you have a method to handle the connection logic
+		            if (client != null) {
+		                client.stopConnection(); // Ensure previous connections are closed
+		            }
+		            client = new Client(host, port, this); // Recreate the client with new host and port
+		            client.startConnection(); // Attempt to connect
+		            setClient(client); // Update the view's reference to the client
+		            // The client itself should call updateConnectionStatus based on the connection result
+		        } catch (NumberFormatException nfe) {
+		            JOptionPane.showMessageDialog(frame, "Invalid port number. Please enter a number between 1 and 65535.", "Invalid Port", JOptionPane.ERROR_MESSAGE);
+		        }
+		    }
+		});
+
+		//		connectItem.setActionCommand("connect");
 		networkMenu.add(disconnectItem);
-		disconnectItem.setActionCommand("dissconnect");
+		disconnectItem.addActionListener(e -> {
+		    if (client != null) {
+		        client.stopConnection(); // Disconnect from the server
+		        updateConnectionStatus(false); // Update the view to show the disconnection status
+		    }
+		});
+
+//		disconnectItem.setActionCommand("dissconnect");
 		menuBar.add(networkMenu);
 
 		frame.setJMenuBar(menuBar);
@@ -170,31 +203,59 @@ public class Connect4View {
 				button.setBackground(Color.WHITE);
 				buttons[i][j] = button;
 				boardPanel.add(button);
+			
+				
+				button.setActionCommand(String.valueOf(Connect4Model.getColumns()));
+	            button.addActionListener(e -> {
+	                int selectedColumn = Integer.parseInt(e.getActionCommand());
+	                if (client != null) {
+	                    client.sendMoveMessage(selectedColumn); // This assumes your Client class has a method sendMoveMessage
+	                } else {
+	                    System.out.println("Client instance is null.");
+	                    //client.sendMoveMessage(selectedColumn);
+	                }// Assuming you have a reference to a Client instance
+	            });
+	       //     gridPanel.add(button);
+	            frame.add(boardPanel, BorderLayout.CENTER);
 			}
 		}
 		frame.add(boardPanel, BorderLayout.CENTER);
 	}
 
 	private void initializeRightPanel() {
-		JPanel rightPanel = new JPanel();
-		rightPanel.setLayout(new BorderLayout());
+	    JPanel rightPanel = new JPanel();
+	    rightPanel.setLayout(new BorderLayout());
 
-		statusPanel = new JPanel();
-		statusPanel.setLayout(new GridLayout(2, 1));
+	    // Initialize statusPanel first
+	    statusPanel = new JPanel();
+	    statusPanel.setLayout(new GridLayout(3, 1)); // Adjusted to accommodate 3 components
 
-		currentPlayerLabel = new JLabel(bundle.getString("current_player"), SwingConstants.CENTER);
-		currentPlayerLabel.setBorder(BorderFactory.createTitledBorder(bundle.getString("current_player")));
-		statusPanel.add(currentPlayerLabel);
+	    // Initialize and configure connectionStatusLabel
+	    connectionStatusLabel = new JLabel("Not Connected");
+	    connectionStatusLabel.setHorizontalAlignment(JLabel.CENTER);
 
-		timerLabel = new JLabel(bundle.getString("timer"), SwingConstants.CENTER);
-		timerLabel.setBorder(BorderFactory.createTitledBorder(bundle.getString("timer")));
-		statusPanel.add(timerLabel);
+	    // Add connectionStatusLabel to statusPanel
+	    statusPanel.add(connectionStatusLabel);
 
-		rightPanel.add(statusPanel, BorderLayout.NORTH);
+	    currentPlayerLabel = new JLabel(bundle.getString("current_player"), SwingConstants.CENTER);
+	    currentPlayerLabel.setBorder(BorderFactory.createTitledBorder(bundle.getString("current_player")));
+	    statusPanel.add(currentPlayerLabel);
 
-		initializeChatPanel(rightPanel);
-		frame.add(rightPanel, BorderLayout.EAST);
+	    timerLabel = new JLabel(bundle.getString("timer"), SwingConstants.CENTER);
+	    timerLabel.setBorder(BorderFactory.createTitledBorder(bundle.getString("timer")));
+	    statusPanel.add(timerLabel);
+
+	    // Now that statusPanel is properly initialized and populated, add it to rightPanel
+	    rightPanel.add(statusPanel, BorderLayout.NORTH);
+
+	    // Continue with the rest of the method...
+	    initializeChatPanel(rightPanel);
+
+	    // Finally, add the rightPanel to the frame
+	    frame.add(rightPanel, BorderLayout.EAST);
 	}
+
+
 
 	private void initializeChatPanel(JPanel rightPanel) {
 	    JPanel chatPanel = new JPanel(new BorderLayout());
@@ -204,6 +265,13 @@ public class Connect4View {
 	    
 	    chatInput = new JTextField();
 	    chatInput.addActionListener(new ChatInputListener()); // Add listener for "Enter" key press
+	    chatInput.addActionListener(e -> {
+	        String chatMsg = chatInput.getText();
+	        if (!chatMsg.isEmpty()) {
+	            client.sendChatMessage(chatMsg); // Send chat message to the server
+	            chatInput.setText(""); // Clear the input field
+	        }
+	    });
 	    chatPanel.add(chatScrollPane, BorderLayout.CENTER);
 	    chatPanel.add(chatInput, BorderLayout.SOUTH);
 	    
@@ -220,6 +288,7 @@ public class Connect4View {
 	        }
 	    }
 	}
+
 
 
 
@@ -303,6 +372,25 @@ public class Connect4View {
 		button.repaint();
 
 	}
+	
+	public void showError(String message) {
+	    JOptionPane.showMessageDialog(this.frame, message, "Error", JOptionPane.ERROR_MESSAGE);
+	}
+
+	public void enableChat() {
+	    // Enable chat-related components here
+	    chatInput.setEnabled(true);
+	}
+
+	public void enableGameControls() {
+	    // Enable game-related components here
+	    for (int i = 0; i < Connect4Model.getRows(); i++) {
+	        for (int j = 0; j < Connect4Model.getColumns(); j++) {
+	            buttons[i][j].setEnabled(true);
+	        }
+	    }
+	}
+
 
 	/**
 	 * Resets the game board to its initial state. This includes clearing all button
@@ -328,6 +416,33 @@ public class Connect4View {
 	public void updateStatus(String text) {
 		currentPlayerLabel.setText(text);
 	}
+	
+	public void updateConnectionStatus(boolean isConnected) {
+	    if (isConnected) {
+	        connectionStatusLabel.setText("Connected");
+	        connectionStatusLabel.setForeground(new Color(34, 139, 34)); // Set to green or any color you prefer
+	        // Enable game controls if necessary
+	        enableGameControls(true);
+	    } else {
+	        connectionStatusLabel.setText("Disconnected");
+	        connectionStatusLabel.setForeground(Color.RED);
+	        // Disable game controls if necessary
+	        enableGameControls(false);
+	    }
+	    frame.revalidate();
+	    frame.repaint();
+	}
+
+	private void enableGameControls(boolean enable) {
+	    for (JButton[] buttonRow : buttons) {
+	        for (JButton button : buttonRow) {
+	            button.setEnabled(enable);
+	        }
+	    }
+	    chatInput.setEnabled(enable); // Enable/disable chat input based on connection status
+	    // Add other components you wish to enable/disable
+	}
+
 
 	/**
 	 * Updates the timer label to display the elapsed time in seconds since the
@@ -355,11 +470,12 @@ public class Connect4View {
 	/**
 	 * Appends a message to the chat area. This method is typically used to display
 	 * chat messages from players.
+	 * @param chatMessage 
 	 * 
 	 * @param message The message to be added to the chat area.
 	 */
-	public void appendChat(String message) {
-		chatArea.append(message + "\n");
+	public void appendChat(String chatMessage) {
+		chatArea.append(chatMessage + "\n");
 	}
 
 	/**
@@ -379,8 +495,8 @@ public class Connect4View {
 		return chatInput.getText();
 	}
 	
-	public void displayChatMessage(String message) {
-	    chatArea.append(message + "\n");
+	public void displayChatMessage(String chatMessage) {
+	    chatArea.append(chatMessage + "\n");
 	    chatArea.setCaretPosition(chatArea.getDocument().getLength()); // Auto-scroll to the latest message
 	}
 

@@ -30,7 +30,7 @@ public class Connect4Controller {
         int port = 6666; // Example port, adjust as necessary
         this.client = new Client(host, port);
         this.view.setClient(client); // Ensure the view has a reference to the client for sending messages
-        client.startConnection(host, port); // Start the client connection
+        client.startConnection(); // Start the client connection
     }
 
     private void initializeActionListeners() {
@@ -51,18 +51,36 @@ public class Connect4Controller {
     }
 
     public void connectToServer(String host, int port) {
-        // Connection logic here
-      //  client = new Client(host, port); // Assuming Client constructor accepts a reference to Connect4View
-        client.startConnection(host, port);
-        view.setClient(client); // This line makes sure the view has a reference to the client for sending chat messages
+        try {
+            if (client == null) {
+                client = new Client(host, port, view); // Pass the view to the client if needed for callbacks
+            }
+            client.startConnection();
+            view.setClient(client);
+            view.updateStatus("Connected to server at " + host + ":" + port);
+        } catch (Exception ex) {
+            view.showError("Could not establish connection: " + ex.getMessage());
+        }
+    }
+    
+    private void connectToServerPrompt() {
+        String host = getHostFromUser();
+        if (host != null) {
+            int port = getUserDefinedPort();
+            if (port > 0) {
+                connectToServer(host, port);
+            }
+        }
     }
 
     public void disconnectFromServer() {
         if (client != null) {
             client.stopConnection();
+            view.updateStatus("Disconnected from server.");
             client = null;
         }
     }
+    
 
     private class ChatListener implements ActionListener {
         @Override
